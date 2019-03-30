@@ -1,0 +1,122 @@
+---
+title: "FIFA19_DATA311_Project"
+author: "Thanat Na Ranong"
+date: "3/8/2019"
+output: pdf_document
+---
+
+```{r}
+fifa19dataset <- read.csv("/Users/pun/eclipse-workspace/DATA311_Project/fixeddata_with_date_diff.csv",header = TRUE, sep = ",")
+
+fifa19dataset <- fifa19dataset[sample(nrow(fifa19dataset)),]
+training <- fifa19dataset[2:18448,]
+test <- fifa19dataset[1,]
+test_pred <- test[,c(4,8:9,13,16,90)]
+test_target <- test["Value"]
+test_target
+
+
+lmFifaPlayers <- lm(Value~Age+Overall+Potential+International.Reputation+date_until_expire, data = training)
+summary(lmFifaPlayers)
+
+mseNum <- (predict(lmFifaPlayers, test)-test_target)^2
+
+for(i in 1:200){
+  mseNum = mseNum + (predict(lmFifaPlayers, test)-test_target)^2
+}
+print(paste0("MSE: ", mseNum/200))
+
+##predict(lmFifaPlayers, test)
+##test_target
+```
+
+```{r}
+plot(Value~Age+Overall+Potential+International.Reputation+date_until_expire, data = training)
+```
+
+Variable selection
+```{r}
+
+
+```
+regression tree
+```{r}
+library(rpart)
+library(rpart.plot)
+
+fifatree <- rpart(value~age+overall+potential+contractValid, data = training, method = "anova")
+
+printcp(fifatree) # display the results 
+plotcp(fifatree) # visualize cross-validation results 
+summary(fifatree) # detailed summary of splits
+##rpart.plot(fifatree)
+
+mseNum2 <- (predict(fifatree, test)-test_target)^2
+
+for(i in 1:200){
+  mseNum = mseNum2 + (predict(fifatree, test)-test_target)^2
+}
+print(paste0("MSE: ", mseNum/200))
+```
+KNN regression
+```{r}
+library(caret)
+
+head(fifa19dataset)
+fifa19dataset_complete <- fifa19dataset[complete.cases(fifa19dataset),]
+summary(fifa19dataset_complete)
+fifa19dataset
+fifa19dataset_sub <- fifa19dataset[,c(4,8:9,12:13,16,90)]
+fifa19dataset_sub <- fifa19dataset_sub[sample(nrow(fifa19dataset)),]
+head(fifa19dataset_sub)
+
+fifa19dataset_predictor <- fifa19dataset_sub[2:17918,c(1:3,5:7)]
+fifa19dataset_response <- fifa19dataset_sub[2:17918,c(4)]
+
+test_predictor <- fifa19dataset_sub[1,c(1:3,5:7)]
+test_response <- fifa19dataset_sub[1,c(4)]
+
+knnregressor <- knnreg(fifa19dataset_predictor,
+                       fifa19dataset_response,
+                       na.action,
+                       k = 5)    
+
+mseNum3 <- (predict(knnregressor, test_predictor)-test_response)^2
+
+for(i in 1:200){
+  mseNum3 = mseNum3 + (predict(knnregressor, test_predictor)-test_response)^2
+}
+print(paste0("MSE: ", mseNum/200))
+
+```
+
+
+
+Random forrest regression
+```{r}
+library(randomForest)
+set.seed(1234)
+fifa19dataset_complete <- fifa19dataset[complete.cases(fifa19dataset),]
+summary(complete.cases(fifa19dataset_complete))
+fifa19dataset
+fifa19dataset_sub_com <- fifa19dataset_complete[,c(4,8:9,12:13,16,90)]
+fifa19dataset_sub_com <- fifa19dataset_sub_com[sample(nrow(fifa19dataset_sub_com)),]
+
+fifa19dataset_predictor <- fifa19dataset_sub_com[,c(1:3,5:7)]
+summary(complete.cases(fifa19dataset_predictor))
+fifa19dataset_response <- fifa19dataset_sub_com[,c(4)]
+
+rdforrestreg <- randomForest(x = fifa19dataset_predictor,
+                             y = fifa19dataset_sub_com$Value,
+                             xtest = NULL,
+                             ytest = NULL,
+                             ntree = 50
+                             )
+
+
+```
+Clustering
+```{r}
+fifa19dataset <- read.csv("/Users/pun/eclipse-workspace/DATA311_Project/fixeddata_with_date_diff.csv",header = TRUE, sep = ",")
+summary(fifa19dataset)
+```
